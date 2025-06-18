@@ -1,0 +1,26 @@
+[runtime]
+log_level = "INFO"
+dlthub_telemetry = false
+
+[extract]
+workers = 2
+
+
+[normalize]
+workers = 2
+
+[load]
+workers = 2
+
+[pipeline.death_metal_pipeline]
+destination = "duckdb"
+
+[destination.duckdb]
+dataset_name = "death_metal"
+
+[sources.filesystem]
+bucket_url = "s3://death-metal-raw"
+
+[sources.filesystem.config]
+use_ssl = false
+signature_version = "s3v4"

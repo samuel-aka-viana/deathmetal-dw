@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: metal_data
+    description: "Raw metal data from DLT pipeline"
+    tables:
+      - name: metal_bands
+        description: "Metal bands information"
+      - name: metal_albums
+        description: "Metal albums information"
+      - name: metal_reviews
+        description: "Metal reviews information"

@@ -1,0 +1,60 @@
+version: 2
+
+models:
+  - name: stg_metal_bands
+    description: "Model of bands"
+    columns:
+      - name: band_id
+        description: "The primary key for this table"
+
+        tests:
+          - not_null
+      - name: band_name
+        description: "name of bands"
+      - name: country
+        description: "country of bands"
+      - name: status
+        description: "status of band"
+      - name: formed_year
+        description: "date of formed"
+      - name: genre
+        description: "genre of band"
+      - name: active_periods
+        description: "date form and is in activity"
+      - name: theme
+        description: "theme of band"
+
+  - name: stg_metal_albums
+    description: "Albums from band"
+    columns:
+      - name: album_id
+        description: "Id do album"
+      - name: band_id
+        description: "Id do album"
+        tests:
+          - relationships:
+              to: ref('stg_metal_albums')
+              field: band_id
+      - name: album_title
+        description: "titulo do album"
+      - name: album_year
+        description: "ano que o album foi lancado"
+
+  - name: stg_metal_reviews
+    description: "Reviews from album"
+    columns:
+      - name: review_id
+        description: "Id do review"
+      - name: album_id
+        description: "Id do album"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_metal_albums')
+              field: album_id
+      - name: review_title
+        description: "titulo do review"
+      - name: score_album
+        description: "nota do album"
+      - name: content_review
+        description: "Conteudo do review"

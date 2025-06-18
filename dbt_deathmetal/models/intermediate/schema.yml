@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: int_metal_bands_parsed
+    description: "Intermediate model with parsed active periods and derived fields"
+    columns:
+      - name: band_id
+        description: "Primary key - Band ID"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_metal_bands')
+              field: band_id
+      - name: band_name
+        description: "Name of the band"
+        tests:
+          - not_null
+      - name: country
+        description: "Country where band is from"
+      - name: status
+        description: "Original status from source"
+      - name: formed_year
+        description: "Year the band was formed"
+      - name: genre
+        description: "Musical genre of the band"
+      - name: theme
+        description: "Lyrical themes of the band"
+      - name: original_active
+        description: "Original active periods string from source"
+      - name: current_status
+        description: "Parsed current status of the band"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Active', 'Split-up', 'Unknown']
+      - name: start_year
+        description: "Year the band started (parsed from active periods)"
+      - name: end_year
+        description: "Year the band ended (null if still active)"
+      - name: years_active
+        description: "Total years the band was/has been active"
+      - name: has_name_change
+        description: "Boolean indicating if band changed names"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+      - name: previous_name
+        description: "Previous name of the band (if changed)"
+      - name: name_change_year
+        description: "Year when the band changed names"
+      - name: periods_count
+        description: "Number of active periods the band had"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1, 2, 3]
+      - name: is_na_case
+        description: "Flag for records where original active data was N/A"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]

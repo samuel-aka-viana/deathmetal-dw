@@ -1,0 +1,163 @@
+version: 2
+
+models:
+  - name: dim_bands
+    description: "Dimension table for metal bands with enriched attributes"
+    columns:
+      - name: band_id
+        description: "Primary key - Band identifier"
+        tests:
+          - not_null
+          - unique
+      - name: band_name
+        description: "Name of the band"
+        tests:
+          - not_null
+      - name: country
+        description: "Country of origin"
+        tests:
+          - not_null
+      - name: continent
+        description: "Continent classification"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [ 'North America', 'South America', 'Europe', 'Asia', 'Oceania', 'Africa', 'Other/Unknown' ]
+      - name: current_status
+        description: "Current status of the band"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [ 'Active', 'Split-up', 'Unknown' ]
+      - name: formation_era
+        description: "Era when band was formed"
+        tests:
+          - not_null
+      - name: band_maturity
+        description: "Band maturity classification"
+        tests:
+          - not_null
+      - name: death_metal_subgenre
+        description: "Death metal subgenre classification"
+        tests:
+          - not_null
+      - name: is_active_flag
+        description: "Flag for active bands"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [ 0, 1 ]
+
+  - name: dim_albums
+    description: "Dimension table for albums with band context and career analysis"
+    columns:
+      - name: album_id
+        description: "Primary key - Album identifier"
+        tests:
+          - not_null
+          - unique
+      - name: band_id
+        description: "Foreign key to bands"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_bands')
+              field: band_id
+      - name: album_title
+        description: "Title of the album"
+        tests:
+          - not_null
+      - name: album_year
+        description: "Year of album release"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "album_year between 1970 and 2024"
+      - name: release_era
+        description: "Era of album release"
+        tests:
+          - not_null
+      - name: band_career_phase
+        description: "Phase of band's career when album was released"
+        tests:
+          - not_null
+      - name: album_number_in_discography
+        description: "Sequential number of album in band's discography"
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "album_number_in_discography >= 1"
+      - name: is_debut_album
+        description: "Flag for debut albums"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [ 0, 1 ]
+      - name: years_since_formation
+        description: "Years between band formation and album release"
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "years_since_formation >= 0 or years_since_formation is null"
+
+  - name: fct_reviews
+    description: "Fact table for album reviews with comprehensive metrics"
+    columns:
+      - name: review_id
+        description: "Primary key - Review identifier"
+        tests:
+          - not_null
+      - name: album_id
+        description: "Foreign key to albums"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_albums')
+              field: album_id
+      - name: band_id
+        description: "Foreign key to bands"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_bands')
+              field: band_id
+      - name: score_album
+        description: "Album score/rating"
+        tests:
+          - not_null
+      - name: score_category
+        description: "Categorized score range"
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - 'Masterpiece (95-100)'
+                - 'Excellent (90-94)'
+                - 'Very Good (80-89)'
+                - 'Good (70-79)'
+                - 'Average (60-69)'
+                - 'Below Average (50-59)'
+                - 'Poor (40-49)'
+                - 'Very Poor (0-39)'
+      - name: score_range
+        description: "Simplified score range"
+        tests:
+          - accepted_values:
+              values: [ 'High (80+)', 'Medium (60-79)', 'Low (<60)' ]
+      - name: overall_score_rank
+        description: "Rank of score across all reviews"
+        tests:
+          - not_null
+      - name: score_percentile
+        description: "Percentile rank of score (0-1)"
+        tests:
+          - not_null
+      - name: is_excellent_score
+        description: "Flag for excellent scores (90+)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [ 0, 1 ]
+      - name: band_total_reviews
+        description: "Total number of reviews for the band"
+        tests:
+          - not_null

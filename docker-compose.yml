@@ -1,0 +1,86 @@
+services:
+  superset:
+    image: apache/superset:latest
+    container_name: superset_duckdb
+    ports:
+      - "8088:8088"
+    volumes:
+      - ./death_metal.duckdb:/data/death_metal.duckdb
+      - superset_data:/app/superset_home
+    environment:
+      - SUPERSET_SECRET_KEY=death-metal-analytics-2024
+    command: >
+      sh -c "
+        pip install duckdb-engine &&
+        superset fab create-admin --username admin --firstname Admin --lastname User --email admin@superset.com --password admin &&
+        superset db upgrade &&
+        superset init &&
+        superset run -h 0.0.0.0 -p 8088 --with-threads --reload
+      "
+    restart: unless-stopped
+    depends_on:
+      - minio
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio_death_metal
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: minio_init_death_metal
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Aguardando MinIO estar disponível...';
+      sleep 10;
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin123;
+      /usr/bin/mc mb myminio/death-metal-raw --ignore-existing;
+      echo 'Bucket death-metal-raw criado com sucesso!';
+      "
+    restart: "no"
+
+  jupyter:
+    image: jupyter/datascience-notebook:latest
+    container_name: jupyter_death_metal
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./death_metal.duckdb:/home/jovyan/data/death_metal.duckdb
+      - jupyter_notebooks:/home/jovyan/work
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=death-metal-jupyter-2024
+    command: >
+      bash -c "
+        pip install duckdb boto3 minio &&
+        start-notebook.sh --NotebookApp.token='death-metal-jupyter-2024' --NotebookApp.password='death-metal' --NotebookApp.disable_check_xsrf=True
+      "
+    restart: unless-stopped
+    user: root
+    working_dir: /home/jovyan
+
+volumes:
+  superset_data:
+  minio_data:
+  jupyter_notebooks:
