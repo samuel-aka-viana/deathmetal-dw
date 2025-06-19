@@ -7,7 +7,7 @@ with source_albums as (
             trim(title) as album_title,
             year::integer as album_year
     from {{ source('metal_data', 'metal_albums') }}
-    where id is not null
+    where id is not null and band is not null
 )
 
 select *

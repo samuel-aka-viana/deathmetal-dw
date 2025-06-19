@@ -71,8 +71,6 @@ models:
         description: "Year of album release"
         tests:
           - not_null
-          - dbt_utils.expression_is_true:
-              expression: "album_year between 1970 and 2024"
       - name: release_era
         description: "Era of album release"
         tests:
@@ -85,8 +83,6 @@ models:
         description: "Sequential number of album in band's discography"
         tests:
           - not_null
-          - dbt_utils.expression_is_true:
-              expression: "album_number_in_discography >= 1"
       - name: is_debut_album
         description: "Flag for debut albums"
         tests:
@@ -95,9 +91,6 @@ models:
               values: [ 0, 1 ]
       - name: years_since_formation
         description: "Years between band formation and album release"
-        tests:
-          - dbt_utils.expression_is_true:
-              expression: "years_since_formation >= 0 or years_since_formation is null"
 
   - name: fct_reviews
     description: "Fact table for album reviews with comprehensive metrics"

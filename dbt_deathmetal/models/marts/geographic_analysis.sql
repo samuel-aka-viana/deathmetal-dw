@@ -8,7 +8,6 @@ with geographic_metrics as (
         count(distinct b.band_id) as total_bands,
         count(distinct a.album_id) as total_albums,
 
-
         min(b.formed_year) as first_band_formed,
         max(b.formed_year) as latest_band_formed,
 

@@ -8,7 +8,7 @@ with source_reviews as (
             score::decimal as score_album,
             content as content_review
     from {{ source('metal_data', 'metal_reviews') }}
-    where album is not null
+    where album is not null and album is not null
 )
 
 select *
