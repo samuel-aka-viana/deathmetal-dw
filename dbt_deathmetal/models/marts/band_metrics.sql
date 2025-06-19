@@ -18,19 +18,22 @@ with band_metrics as (select b.band_id,
                              avg(r.score_album)                                                                as avg_score,
                              min(r.score_album)                                                                as min_score,
                              max(r.score_album)                                                                as max_score,
-                             stddev(r.score_album)                                                             as score_consistency,
+                            {{ stddev_function('r.score_album') }} as score_consistency,
 
-                             sum(case when r.score_album >= 80 then 1 else 0 end) * 100.0 /
-                             count(r.review_id)                                                                as pct_high_quality,
-                             sum(case when r.score_album >= 90 then 1 else 0 end) * 100.0 /
-                             count(r.review_id)                                                                as pct_excellent,
+                            {% if target.type == 'bigquery' %}
+                                SAFE_DIVIDE(sum(case when r.score_album >= 80 then 1 else 0 end) * 100.0, count(r.review_id))
+                            {% else %}
+                                sum(case when r.score_album >= 80 then 1 else 0 end) * 100.0 / count(r.review_id)
+                            {% endif %} as pct_high_quality,
 
-                             sum(case when a.is_debut_album = 1 then r.score_album else 0 end)                 as debut_score,
-                             sum(case when a.album_number_in_discography = 2 then r.score_album else 0 end)    as second_album_score,
+                            {% if target.type == 'bigquery' %}
+                                SAFE_DIVIDE(sum(case when r.score_album >= 90 then 1 else 0 end) * 100.0, count(r.review_id))
+                            {% else %}
+                                sum(case when r.score_album >= 90 then 1 else 0 end) * 100.0 / count(r.review_id)
+                            {% endif %} as pct_excellent,
 
                              case when count(r.review_id) >= 5 then 1 else 0 end                               as has_substantial_catalog,
-                             case when stddev(r.score_album) <= 10 then 1 else 0 end                           as is_consistent_quality
-
+                            case when {{ stddev_function('r.score_album') }} <= 10 then 1 else 0 end as is_consistent_quality
                       from {{ ref('dim_bands') }} b
                                left join {{ ref('dim_albums') }} a on b.band_id = a.band_id
                                left join {{ ref('fct_reviews') }} r on a.album_id = r.album_id

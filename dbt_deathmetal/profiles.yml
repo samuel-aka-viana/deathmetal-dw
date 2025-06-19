@@ -1,15 +1,41 @@
+dbt_deathmetal_bq:
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('DBT_BIGQUERY_PROJECT') }}"
+      dataset: "{{ env_var('DBT_BIGQUERY_DEV_DATASET', 'death_metal_analytics') }}"
+      threads: 8
+      timeout_seconds: 300
+      location: "{{ env_var('DBT_BIGQUERY_LOCATION', 'US') }}"
+      priority: interactive
+      keyfile: "{{ env_var('DBT_BIGQUERY_KEYFILE') }}"
+
+    prod:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('DBT_BIGQUERY_PROJECT') }}"
+      dataset: "{{ env_var('DBT_BIGQUERY_PROD_DATASET', 'death_metal_analytics_prod') }}"
+      threads: 8
+      timeout_seconds: 600
+      location: "{{ env_var('DBT_BIGQUERY_LOCATION', 'US') }}"
+      priority: batch
+      keyfile: "{{ env_var('DBT_BIGQUERY_KEYFILE') }}"
+
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+
 dbt_deathmetal:
   outputs:
     dev:
       type: duckdb
-      path: /home/smovisk/PycharmProjects/dlt-introduction/death-metal/death_metal.duckdb
-      schema: metal_data
+      path: "{{ env_var('DBT_DUCKDB_PATH') }}"
+      schema: "{{ env_var('DBT_DUCKDB_SCHEMA', 'metal_data') }}"
       threads: 2
 
     prod:
       type: duckdb
-      path: /home/smovisk/PycharmProjects/dlt-introduction/death-metal/death_metal.duckdb
-      schema: metal_data
+      path: "{{ env_var('DBT_DUCKDB_PATH') }}"
+      schema: "{{ env_var('DBT_DUCKDB_SCHEMA', 'metal_data') }}"
       threads: 4
 
-  target: dev
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"

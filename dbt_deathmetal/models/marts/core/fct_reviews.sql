@@ -45,27 +45,37 @@ with reviews_base as (
             else 'Low (<60)'
         end as score_range,
 
-        length(r.review_title) as review_title_length,
+        {% if target.type == 'bigquery' %}
+            LENGTH(r.review_title)
+        {% else %}
+            length(r.review_title)
+        {% endif %} as review_title_length,
+
         case
             when r.review_title is null or trim(r.review_title) = '' then 'No Title'
-            when length(r.review_title) <= 20 then 'Short Title'
-            when length(r.review_title) <= 50 then 'Medium Title'
+            when {% if target.type == 'bigquery' %}LENGTH(r.review_title){% else %}length(r.review_title){% endif %} <= 20 then 'Short Title'
+            when {% if target.type == 'bigquery' %}LENGTH(r.review_title){% else %}length(r.review_title){% endif %} <= 50 then 'Medium Title'
             else 'Long Title'
         end as review_title_category,
 
-        length(r.content_review) as review_content_length,
+        {% if target.type == 'bigquery' %}
+            LENGTH(r.content_review)
+        {% else %}
+            length(r.content_review)
+        {% endif %} as review_content_length,
+
         case
             when r.content_review is null or trim(r.content_review) = '' then 'No Content'
-            when length(r.content_review) <= 100 then 'Brief Review'
-            when length(r.content_review) <= 500 then 'Short Review'
-            when length(r.content_review) <= 1000 then 'Medium Review'
-            when length(r.content_review) <= 2000 then 'Long Review'
+            when {% if target.type == 'bigquery' %}LENGTH(r.content_review){% else %}length(r.content_review){% endif %} <= 100 then 'Brief Review'
+            when {% if target.type == 'bigquery' %}LENGTH(r.content_review){% else %}length(r.content_review){% endif %} <= 500 then 'Short Review'
+            when {% if target.type == 'bigquery' %}LENGTH(r.content_review){% else %}length(r.content_review){% endif %} <= 1000 then 'Medium Review'
+            when {% if target.type == 'bigquery' %}LENGTH(r.content_review){% else %}length(r.content_review){% endif %} <= 2000 then 'Long Review'
             else 'Very Long Review'
         end as review_content_category,
 
         case when r.review_title is not null and trim(r.review_title) != '' then 1 else 0 end as has_review_title,
         case when r.content_review is not null and trim(r.content_review) != '' then 1 else 0 end as has_review_content,
-        case when length(r.content_review) >= 100 then 1 else 0 end as is_substantial_review,
+        case when {% if target.type == 'bigquery' %}LENGTH(r.content_review){% else %}length(r.content_review){% endif %} >= 100 then 1 else 0 end as is_substantial_review,
 
         case when r.score_album >= 90 then 1 else 0 end as is_excellent_score,
         case when r.score_album >= 80 then 1 else 0 end as is_high_score,
@@ -73,7 +83,11 @@ with reviews_base as (
         case when r.score_album < 50 then 1 else 0 end as is_poor_score,
 
         case when r.score_album > 75 then r.score_album - 75 else 0 end as score_above_threshold,
-        abs(r.score_album - 70) as score_deviation_from_average
+        {% if target.type == 'bigquery' %}
+            ABS(r.score_album - 70)
+        {% else %}
+            abs(r.score_album - 70)
+        {% endif %} as score_deviation_from_average
 
     from {{ ref('stg_metal_reviews') }} r
     join {{ ref('dim_albums') }} a on r.album_id = a.album_id
@@ -89,9 +103,23 @@ reviews_with_rankings as (
         row_number() over (partition by release_decade order by score_album desc) as decade_score_rank,
         row_number() over (partition by death_metal_subgenre order by score_album desc) as subgenre_score_rank,
 
-        percent_rank() over (order by score_album) as score_percentile,
-        percent_rank() over (partition by release_decade order by score_album) as decade_score_percentile,
-        percent_rank() over (partition by death_metal_subgenre order by score_album) as subgenre_score_percentile,
+        {% if target.type == 'bigquery' %}
+            PERCENT_RANK() OVER (ORDER BY score_album)
+        {% else %}
+            percent_rank() over (order by score_album)
+        {% endif %} as score_percentile,
+
+        {% if target.type == 'bigquery' %}
+            PERCENT_RANK() OVER (PARTITION BY release_decade ORDER BY score_album)
+        {% else %}
+            percent_rank() over (partition by release_decade order by score_album)
+        {% endif %} as decade_score_percentile,
+
+        {% if target.type == 'bigquery' %}
+            PERCENT_RANK() OVER (PARTITION BY death_metal_subgenre ORDER BY score_album)
+        {% else %}
+            percent_rank() over (partition by death_metal_subgenre order by score_album)
+        {% endif %} as subgenre_score_percentile,
 
         score_album - avg(score_album) over () as score_vs_overall_avg,
         score_album - avg(score_album) over (partition by band_id) as score_vs_band_avg,
@@ -110,22 +138,17 @@ reviews_with_rankings as (
 
 select
     review_id,
-
     album_id,
     band_id,
-
     review_title,
     score_album,
     content_review,
-
     score_category,
     score_range,
-
     review_title_length,
     review_title_category,
     review_content_length,
     review_content_category,
-
     album_title,
     band_name,
     album_year,
@@ -140,7 +163,6 @@ select
     band_maturity,
     years_since_formation,
     album_number_in_discography,
-
     has_review_title,
     has_review_content,
     is_substantial_review,
@@ -153,7 +175,6 @@ select
     is_above_overall_avg,
     is_above_band_avg,
     is_above_subgenre_avg,
-
     overall_score_rank,
     band_score_rank,
     country_score_rank,
@@ -162,18 +183,15 @@ select
     score_percentile,
     decade_score_percentile,
     subgenre_score_percentile,
-
     score_vs_overall_avg,
     score_vs_band_avg,
     score_vs_country_avg,
     score_vs_decade_avg,
     score_above_threshold,
     score_deviation_from_average,
-
     band_total_reviews,
     album_total_reviews,
-
-    current_timestamp as created_at,
-    current_timestamp as updated_at
+    {{ current_timestamp_func() }} as created_at,
+    {{ current_timestamp_func() }} as updated_at
 
 from reviews_with_rankings
