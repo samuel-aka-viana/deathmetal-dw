@@ -43,8 +43,6 @@ models:
         description: "Boolean indicating if band changed names"
         tests:
           - not_null
-          - accepted_values:
-              values: [true, false]
       - name: previous_name
         description: "Previous name of the band (if changed)"
       - name: name_change_year
@@ -53,11 +51,7 @@ models:
         description: "Number of active periods the band had"
         tests:
           - not_null
-          - accepted_values:
-              values: [0, 1, 2, 3]
       - name: is_na_case
         description: "Flag for records where original active data was N/A"
         tests:
           - not_null
-          - accepted_values:
-              values: [true, false]

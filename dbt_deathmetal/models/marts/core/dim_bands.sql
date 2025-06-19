@@ -20,7 +20,6 @@ with bands_enriched as (
         periods_count,
         is_na_case,
 
-
         case
             when years_active >= 30 then 'Veteran (30+ years)'
             when years_active >= 15 then 'Established (15-29 years)'
@@ -28,7 +27,6 @@ with bands_enriched as (
             when years_active >= 1 then 'New (1-4 years)'
             else 'Unknown Duration'
         end as band_maturity,
-
 
         case
             when formed_year between 1960 and 1979 then 'Proto-Metal Era'
@@ -40,7 +38,6 @@ with bands_enriched as (
             else 'Unknown Era'
         end as formation_era,
 
-
         case
             when formed_year between 1980 and 1989 then '1980s'
             when formed_year between 1990 and 1999 then '1990s'
@@ -49,7 +46,6 @@ with bands_enriched as (
             when formed_year >= 2020 then '2020s+'
             else 'Pre-1980s'
         end as formation_decade,
-
 
         case
             when country in ('United States', 'Canada', 'Mexico') then 'North America'
@@ -61,16 +57,13 @@ with bands_enriched as (
             else 'Other/Unknown'
         end as continent,
 
-
         case when current_status = 'Active' then 1 else 0 end as is_active_flag,
         case when has_name_change then 1 else 0 end as has_name_change_flag,
         case when formed_year between 1990 and 1999 then 1 else 0 end as is_golden_age_band,
         case when years_active >= 20 then 1 else 0 end as is_veteran_band,
         case when genre like '%Death Metal%' then 1 else 0 end as is_pure_death_metal,
 
-
         case when is_na_case then 'Insufficient Data' else 'Has Data' end as data_quality,
-
 
         case
             when current_status = 'Active' then 2024 - formed_year
@@ -78,8 +71,16 @@ with bands_enriched as (
             else null
         end as total_career_span,
 
-
         case
+            {% if target.type == 'bigquery' %}
+            when UPPER(genre) like '%BRUTAL%' then 'Brutal Death Metal'
+            when UPPER(genre) like '%TECHNICAL%' or UPPER(genre) like '%TECH%' then 'Technical Death Metal'
+            when UPPER(genre) like '%MELODIC%' then 'Melodic Death Metal'
+            when UPPER(genre) like '%PROGRESSIVE%' then 'Progressive Death Metal'
+            when UPPER(genre) like '%BLACKENED%' or UPPER(genre) like '%BLACK%' then 'Blackened Death Metal'
+            when UPPER(genre) like '%DOOM%' then 'Death/Doom Metal'
+            when UPPER(genre) like '%GRIND%' then 'Deathgrind'
+            {% else %}
             when genre ilike '%brutal%' then 'Brutal Death Metal'
             when genre ilike '%technical%' or genre ilike '%tech%' then 'Technical Death Metal'
             when genre ilike '%melodic%' then 'Melodic Death Metal'
@@ -87,6 +88,7 @@ with bands_enriched as (
             when genre ilike '%blackened%' or genre ilike '%black%' then 'Blackened Death Metal'
             when genre ilike '%doom%' then 'Death/Doom Metal'
             when genre ilike '%grind%' then 'Deathgrind'
+            {% endif %}
             when genre = 'Death Metal' then 'Traditional Death Metal'
             else 'Other Death Metal'
         end as death_metal_subgenre
@@ -131,8 +133,8 @@ select
     is_na_case,
     original_active,
 
-    current_timestamp as created_at,
-    current_timestamp as updated_at,
+    {{ current_timestamp_func() }} as created_at,
+    {{ current_timestamp_func() }} as updated_at,
     true as is_current_record
 
 from bands_enriched

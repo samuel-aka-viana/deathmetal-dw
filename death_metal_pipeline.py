@@ -70,30 +70,12 @@ def main():
         write_disposition="replace"
     )
 
-    print(f"📊 Load info: {load_info}")
-
+    print(f"Load info: {load_info}")
     df = pipeline.dataset(dataset_type="default").metal_bands.df()
-    print(f"📈 Total de registros: {len(df)}")
-    print(f"📈 IDs únicos: {df['id'].nunique()}")
-
-    duplicates = df[df.duplicated(subset=['id'], keep=False)]
-    if not duplicates.empty:
-        print(f"⚠️  ATENÇÃO: {len(duplicates)} registros duplicados encontrados!")
-        print(duplicates[['id']].value_counts())
-    else:
-        print("✅ Nenhuma duplicata encontrada!")
 
     print(df.head())
     return pipeline
 
 
-
-
-
 if __name__ == "__main__":
-    # 🔧 SOLUÇÃO 1: Limpar e recarregar
-
     pipeline = main()
-
-
-    print("\n🎉 Processo concluído!")

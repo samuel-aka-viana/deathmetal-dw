@@ -1,3 +1,29 @@
+dbt_deathmetal_bq:
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: dw-bigquery-462900
+      dataset: death_metal_analytics
+      threads: 8
+      timeout_seconds: 300
+      location: US
+      priority: interactive
+      keyfile: /home/smovisk/.config/gcloud/dw-bigquery-462900-a4b8c80ac45d.json
+
+    prod:
+      type: bigquery
+      method: service-account
+      project: dw-bigquery-462900
+      dataset: death_metal_analytics_prod
+      threads: 8
+      timeout_seconds: 600
+      location: US
+      priority: batch
+      keyfile: /home/smovisk/.config/gcloud/dw-bigquery-462900-a4b8c80ac45d.json
+
+  target: dev
+
 dbt_deathmetal:
   outputs:
     dev:

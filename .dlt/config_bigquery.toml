@@ -1,0 +1,28 @@
+[runtime]
+log_level = "INFO"
+dlthub_telemetry = false
+
+[extract]
+workers = 8
+
+[normalize]
+workers = 8
+
+[load]
+workers = 8
+
+[pipeline.death_metal_pipeline_bq]
+destination = "bigquery"
+
+[destination.bigquery]
+dataset_name = "death_metal_analytics"
+location = "US"
+
+job_timeout = 3600
+job_retry_deadline_seconds = 600
+
+[sources.filesystem]
+bucket_url = "gs://death-metal-raw-data"
+
+[sources.filesystem.config]
+use_ssl = true
