@@ -1,0 +1,46 @@
+name: 'dbt_deathmetal_bigquery'
+version: '1.0.0'
+
+profile: 'dbt_deathmetal_bq'
+
+model-paths: [ "models" ]
+analysis-paths: [ "analyses" ]
+test-paths: [ "tests" ]
+seed-paths: [ "seeds" ]
+macro-paths: [ "macros" ]
+snapshot-paths: [ "snapshots" ]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  dbt_deathmetal_bigquery:
+    staging:
+      +materialized: table
+
+    intermediate:
+      +materialized: table
+
+    marts:
+      core:
+        +materialized: table
+      +materialized: table
+
+vars:
+  current_year: 2024
+  environment: "cloud"
+  use_clustering: true
+  batch_size: 10000
+  dataset_location: "US"
+  job_timeout_ms: 300000
+
+tests:
+  dbt_deathmetal_bigquery:
+    +severity: error
+
+snapshots:
+  dbt_deathmetal_bigquery:
+    +target_schema: snapshots
+    +strategy: timestamp
+    +updated_at: updated_at
