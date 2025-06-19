@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: metal_data
     description: "Raw metal data from DLT pipeline"
-    schema: death_metal_analytics
+    schema: "{{ 'death_metal_analytics' if target.type == 'bigquery' else '' }}"
     tables:
       - name: metal_bands
         description: "Metal bands information"

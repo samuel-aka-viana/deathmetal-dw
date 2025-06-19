@@ -3,7 +3,7 @@ services:
     image: apache/superset:latest
     container_name: superset_duckdb
     ports:
-      - "8088:8088"
+      - "8089:8089"
     volumes:
       - ./death_metal.duckdb:/data/death_metal.duckdb
       - superset_data:/app/superset_home
@@ -15,7 +15,7 @@ services:
         superset fab create-admin --username admin --firstname Admin --lastname User --email admin@superset.com --password admin &&
         superset db upgrade &&
         superset init &&
-        superset run -h 0.0.0.0 -p 8088 --with-threads --reload
+        superset run -h 0.0.0.0 -p 8089 --with-threads --reload
       "
     restart: unless-stopped
     depends_on:

@@ -29,19 +29,29 @@ aggregated as (
         count(distinct review_id) as total_reviews,
         count(distinct band_id) as total_bands,
         avg(score_album) as avg_score,
-        stddev(score_album) as score_variance,
+        {% if target.type == 'bigquery' %}
+            stddev(score_album) as score_variance,
+        {% else %}
+            stddev_samp(score_album) as score_variance,
+        {% endif %}
         sum(case when score_album >= 90 then 1 else 0 end) as excellent_count,
         sum(case when score_album >= 80 then 1 else 0 end) as high_quality_count,
         sum(case when score_album < 50 then 1 else 0 end) as poor_count,
         {% if target.type == 'bigquery' %}
             SAFE_DIVIDE(sum(case when score_album >= 90 then 1 else 0 end) * 100.0, count(score_album))
         {% else %}
-            sum(case when score_album >= 90 then 1 else 0 end) * 100.0 / count(score_album)
+            case
+                when count(score_album) = 0 then null
+                else sum(case when score_album >= 90 then 1 else 0 end) * 100.0 / count(score_album)
+            end
         {% endif %} as pct_excellent,
         {% if target.type == 'bigquery' %}
             SAFE_DIVIDE(sum(case when score_album >= 80 then 1 else 0 end) * 100.0, count(score_album))
         {% else %}
-            sum(case when score_album >= 80 then 1 else 0 end) * 100.0 / count(score_album)
+            case
+                when count(score_album) = 0 then null
+                else sum(case when score_album >= 80 then 1 else 0 end) * 100.0 / count(score_album)
+            end
         {% endif %} as pct_high_quality,
         min(formed_year) as earliest_band,
         max(formed_year) as latest_band,
@@ -54,11 +64,18 @@ aggregated as (
 
 medians as (
     select
-        distinct death_metal_subgenre,
+        death_metal_subgenre,
         continent,
-        percentile_cont(score_album, 0.5) over(partition by death_metal_subgenre, continent) as median_score
+        {% if target.type == 'bigquery' %}
+            percentile_cont(score_album, 0.5) over(partition by death_metal_subgenre, continent) as median_score
+        {% else %}
+            percentile_cont(0.5) within group (order by score_album) as median_score
+        {% endif %}
     from base
     where score_album is not null
+    {% if target.type != 'bigquery' %}
+    group by death_metal_subgenre, continent
+    {% endif %}
 ),
 
 sub_decade_count as (
@@ -116,11 +133,7 @@ final as (
         d_dec.dominant_decade,
         d_ctry.dominant_country
     from aggregated a
-    left join (
-        select death_metal_subgenre, continent, max(median_score) as median_score
-        from medians
-        group by death_metal_subgenre, continent
-    ) m using (death_metal_subgenre, continent)
+    left join medians m using (death_metal_subgenre, continent)
     left join dominant_decade_cte d_dec using(death_metal_subgenre, continent)
     left join dominant_country_cte d_ctry using(death_metal_subgenre, continent)
 )

@@ -71,3 +71,36 @@
         order by {{ order_by }}
     )
 {% endmacro %}
+
+
+
+{% macro safe_divide(numerator, denominator) %}
+    {% if target.type == 'bigquery' %}
+        SAFE_DIVIDE({{ numerator }}, {{ denominator }})
+    {% else %}
+        case
+            when {{ denominator }} = 0 or {{ denominator }} is null then null
+            else {{ numerator }} / {{ denominator }}
+        end
+    {% endif %}
+{% endmacro %}
+
+{% macro percentile_cont_window(column, percentile, partition_by=None) %}
+    {% if target.type == 'bigquery' %}
+        percentile_cont({{ column }}, {{ percentile }}) over(
+            {% if partition_by is not none %}
+                partition by {{ partition_by }}
+            {% endif %}
+        )
+    {% else %}
+        percentile_cont({{ percentile }}) within group (order by {{ column }})
+    {% endif %}
+{% endmacro %}
+
+{% macro percentile_cont_grouped(column, percentile) %}
+    {% if target.type == 'bigquery' %}
+        percentile_cont({{ column }}, {{ percentile }}) over()
+    {% else %}
+        percentile_cont({{ percentile }}) within group (order by {{ column }})
+    {% endif %}
+{% endmacro %}

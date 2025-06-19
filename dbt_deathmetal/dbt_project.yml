@@ -1,47 +1,8 @@
-## Name your project! Project names should contain only lowercase characters
-## and underscores. A good package name should reflect your organization's
-## name or the intended use of these models
-#name: 'dbt_deathmetal'
-#version: '1.0.0'
-#
-## This setting configures which "profile" dbt uses for this project.
-#profile: 'dbt_deathmetal'
-#
-## These configurations specify where dbt should look for different types of files.
-## The `model-paths` config, for example, states that models in this project can be
-## found in the "models/" directory. You probably won't need to change these!
-#model-paths: [ "models" ]
-#analysis-paths: [ "analyses" ]
-#test-paths: [ "tests" ]
-#seed-paths: [ "seeds" ]
-#macro-paths: [ "macros" ]
-#snapshot-paths: [ "snapshots" ]
-#
-#clean-targets: # directories to be removed by `dbt clean`
-#  - "target"
-#  - "dbt_packages"
-#
-#
-## Configuring models
-## Full documentation: https://docs.getdbt.com/docs/configuring-models
-#
-## In this example config, we tell dbt to build all models in the example/
-## directory as views. These settings can be overridden in the individual model
-## files using the `{{ config(...) }}` macro.
-#models:
-#  dbt_deathmetal:
-#    staging:
-#      +materialized: table
-#    intermediate:
-#      +materialized: table
-#    marts:
-#      +materialized: view
-
-
-name: 'dbt_deathmetal_bigquery'
+name: 'dbt_deathmetal'
 version: '1.0.0'
+config-version: 2
 
-profile: 'dbt_deathmetal_bq'
+profile: "{{ 'dbt_deathmetal_bq' if env_var('DBT_USE_BIGQUERY', 'false') == 'true' else 'dbt_deathmetal' }}"
 
 model-paths: [ "models" ]
 analysis-paths: [ "analyses" ]
@@ -54,32 +15,54 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
-models:
-  dbt_deathmetal_bigquery:
-    staging:
-      +materialized: table
-    intermediate:
-      +materialized: table
-    marts:
-      core:
-        +materialized: table
-      +materialized: table
-
 vars:
   current_year: 2024
-  environment: "cloud"
-  use_clustering: true
-  batch_size: 10000
-  dataset_location: "US"
-  job_timeout_ms: 300000
+  analysis_start_year: 1980
+  analysis_end_year: 2024
+  
+  environment: "{{ 'prod' if target.name == 'prod' else 'dev' }}"
+  
+  use_clustering: "{{ true if target.type == 'bigquery' else false }}"
+  use_partitioning: "{{ true if target.type == 'bigquery' else false }}"
+  batch_size: "{{ 50000 if target.type == 'bigquery' else 10000 }}"
+  
+  dataset_location: "{{ env_var('DBT_BIGQUERY_LOCATION', 'US') }}"
+  job_timeout_ms: "{{ 600000 if target.name == 'prod' else 300000 }}"
+  
+  freshness_threshold_hours: "{{ 48 if target.name == 'prod' else 168 }}"
+  test_severity: "{{ 'error' if target.name == 'prod' else 'warn' }}"
+
+models:
+  dbt_deathmetal:
+    staging:
+      +materialized: table
+      +docs:
+        node_color: "#228B22"
+
+    intermediate:
+      +materialized: "{{ 'table' if target.name == 'prod' else 'view' }}"
+      +docs:
+        node_color: "#FFA500"
+
+    marts:
+      +docs:
+        node_color: "#4169E1"
+      
+      core:
+        +materialized: table
+
+      analytics:
+        +materialized: "{{ 'table' if target.name == 'prod' else 'view' }}"
+
 
 tests:
-  dbt_deathmetal_bigquery:
-    +severity: error
+  dbt_deathmetal:
+    +store_failures: true
+    +schema: "{{ 'test_failures' if target.type == 'bigquery' else 'main' }}"
 
 snapshots:
-  dbt_deathmetal_bigquery:
-    +target_schema: snapshots
+  dbt_deathmetal:
+    +target_schema: "{{ 'snapshots' if target.type == 'bigquery' else 'main' }}"
     +strategy: timestamp
     +updated_at: updated_at
 

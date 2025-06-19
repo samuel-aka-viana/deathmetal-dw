@@ -30,21 +30,36 @@ aggregated as (
         count(distinct country)          as countries_represented,
         count(distinct case when is_debut_album = 1 then album_id end) as debut_albums,
         avg(case when is_debut_album = 1 then score_album end) as avg_debut_score,
-        count(distinct death_metal_subgenre) as subgenres_active
+        count(distinct death_metal_subgenre) as subgenres_active,
+        -- Agregações de score por ano
+        avg(score_album) as avg_score,
+        {% if target.type == 'bigquery' %}
+            stddev(score_album) as score_variance,
+        {% else %}
+            stddev_samp(score_album) as score_variance,
+        {% endif %}
+        sum(case when score_album >= 90 then 1 else 0 end) as excellent_albums,
+        sum(case when score_album >= 80 then 1 else 0 end) as high_quality_albums,
+        sum(case when score_album < 50 then 1 else 0 end) as poor_albums
     from base
     group by album_year, release_decade, release_era
 ),
 
-score_stats as (
+medians as (
     select
         album_year,
-        avg(score_album) over (partition by album_year)    as avg_score,
-        percentile_cont(score_album, 0.5) over (partition by album_year) as median_score,
-        stddev(score_album) over (partition by album_year) as score_variance,
-        sum(case when score_album >= 90 then 1 else 0 end) over(partition by album_year) as excellent_albums,
-        sum(case when score_album >= 80 then 1 else 0 end) over(partition by album_year) as high_quality_albums,
-        sum(case when score_album < 50 then 1 else 0 end) over(partition by album_year) as poor_albums
+        {% if target.type == 'bigquery' %}
+            percentile_cont(score_album, 0.5) over (partition by album_year) as median_score
+        {% else %}
+            percentile_cont(0.5) within group (order by score_album) as median_score
+        {% endif %}
     from base
+    where score_album is not null
+    {% if target.type != 'bigquery' %}
+    group by album_year
+    {% else %}
+    qualify row_number() over (partition by album_year order by score_album) = 1
+    {% endif %}
 ),
 
 subgenre_count as (
@@ -77,28 +92,11 @@ dominant_subgenre_cte as (
 final as (
     select
         a.*,
-        s.avg_score,
-        s.median_score,
-        s.score_variance,
-        s.excellent_albums,
-        s.high_quality_albums,
-        s.poor_albums,
+        m.median_score,
         d.dominant_subgenre
     from aggregated a
-    left join (
-        select distinct
-            album_year,
-            avg_score,
-            median_score,
-            score_variance,
-            excellent_albums,
-            high_quality_albums,
-            poor_albums
-        from score_stats
-    ) s
-      using (album_year)
-    left join dominant_subgenre_cte d
-      using (album_year)
+    left join medians m using (album_year)
+    left join dominant_subgenre_cte d using (album_year)
 )
 
 select
