@@ -1,0 +1,39 @@
+prefect-version: 2.19.0
+
+build: null
+
+push: null
+
+pull:
+  - prefect.deployments.steps.set_working_directory:
+      directory: "{{ $PROJECT_ROOT }}"
+
+deployments:
+  - name: death-metal-pipeline
+    version: null
+    tags: [ "death-metal", "data-pipeline", "etl" ]
+    description: "Pipeline de dados Death Metal - DuckDB/BigQuery"
+    entrypoint: workflows/death_metal_flow.py:death_metal_data_pipeline
+    parameters: { }
+    work_pool:
+      name: default
+
+
+  - name: death-metal-clean
+    version: null
+    tags: [ "death-metal", "clean", "dlt", "dbt" ]
+    description: "Transformacao de dados Death Metal - DuckDB/BigQuery"
+    entrypoint: workflows/modern_dbt_pipeline.py:fixed_modern_dbt_pipeline
+    parameters: { }
+    work_pool:
+      name: default
+
+
+
+project:
+  recipe: null
+
+
+variables:
+  ambiente: "desenvolvimento"
+  log_level: "INFO"
