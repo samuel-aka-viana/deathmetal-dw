@@ -2,13 +2,13 @@
 #  outputs:
 #    dev:
 #      type: duckdb
-#      path: /home/smovisk/PycharmProjects/dlt-introduction/death-metal/death_metal.duckdb
+#      path: path/death_metal.duckdb
 #      schema: metal_data
 #      threads: 2
 #
 #    prod:
 #      type: duckdb
-#      path: /home/smovisk/PycharmProjects/dlt-introduction/death-metal/death_metal.duckdb
+#      path: path/death_metal.duckdb
 #      schema: metal_data
 #      threads: 4
 #
