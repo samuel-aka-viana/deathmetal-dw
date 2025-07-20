@@ -47,8 +47,8 @@ class BaseDeathMetalPipeline(ABC):
         )
         def load_metal_bands() -> Iterator[Dict[str, Any]]:
             source = filesystem(
-                bucket_url=self.get_bucket_url(),
-                file_glob="bands.csv"
+                bucket_url=self.get_bucket_url()+'/bands',
+                file_glob="*.csv"
             ) | read_csv()
 
             for row in source:
@@ -72,8 +72,8 @@ class BaseDeathMetalPipeline(ABC):
         )
         def load_metal_albums() -> Iterator[Dict[str, Any]]:
             source = filesystem(
-                bucket_url=self.get_bucket_url(),
-                file_glob="albums.csv"
+                bucket_url=self.get_bucket_url()+'/albums',
+                file_glob="*.csv"
             ) | read_csv()
 
             for row in source:
@@ -98,8 +98,8 @@ class BaseDeathMetalPipeline(ABC):
         )
         def load_metal_reviews() -> Iterator[Dict[str, Any]]:
             source = filesystem(
-                bucket_url=self.get_bucket_url(),
-                file_glob="reviews.csv"
+                bucket_url=self.get_bucket_url()+'/reviews',
+                file_glob="*.csv"
             ) | read_csv()
 
             for row in source:
