@@ -66,7 +66,7 @@ services:
     ports:
       - "8888:8888"
     volumes:
-      - ./death_metal.duckdb:/home/jovyan/data/death_metal.duckdb
+      - ./death_metal.duckdb:/home/jovyan/death_metal.duckdb
       - jupyter_notebooks:/home/jovyan/work
     environment:
       - JUPYTER_ENABLE_LAB=yes
